@@ -24,40 +24,44 @@ function ConversationForm({ conversationId, onBack, onSuccess }) {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
+    const fetchMainTopics = async () => {
+      try {
+        const topics = await getMainTopics();
+        setMainTopics(topics);
+      } catch (err) {
+        console.error('Failed to load main topics:', err);
+      }
+    };
     fetchMainTopics();
+  }, []);
+
+  useEffect(() => {
+    const fetchConversation = async () => {
+      try {
+        setLoading(true);
+        const data = await getConversation(conversationId);
+        setFormData({
+          mainTopic: data.mainTopic,
+          subTopic: data.subTopic,
+          article: data.article,
+          positiveConversation: data.positiveConversation || '',
+          negativeConversation: data.negativeConversation || '',
+        });
+        setCurrentArticleAudioUrl(data.articleAudio);
+        setCurrentConversationAudioUrl(data.conversationAudio);
+      } catch (err) {
+        setError('Failed to load conversation');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (conversationId) {
       fetchConversation();
     }
   }, [conversationId]);
 
-  const fetchMainTopics = async () => {
-    try {
-      const topics = await getMainTopics();
-      setMainTopics(topics);
-    } catch (err) {
-      console.error('Failed to load main topics:', err);
-    }
-  };
 
-  const fetchConversation = async () => {
-    try {
-      setLoading(true);
-      const data = await getConversation(conversationId);
-      setFormData({
-        mainTopic: data.mainTopic,
-        subTopic: data.subTopic,
-        article: data.article,
-        positiveConversation: data.positiveConversation || '',
-        negativeConversation: data.negativeConversation || '',
-      });
-      setCurrentArticleAudioUrl(data.articleAudio);
-      setCurrentConversationAudioUrl(data.conversationAudio);
-    } catch (err) {
-      setError('Failed to load conversation');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;

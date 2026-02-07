@@ -19,28 +19,30 @@ function RoadmapForm({ roadmapId, onBack, onSuccess }) {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
+    const fetchRoadmap = async () => {
+      try {
+        setLoading(true);
+        const data = await getRoadmap(roadmapId);
+        setFormData({
+          mainTopic: data.mainTopic,
+          syllabus: data.syllabus || '',
+          routerLink: data.routerLink || '',
+          intro: data.intro || '',
+        });
+        setCurrentImageUrl(data.imageUrl);
+      } catch (err) {
+        setError('Failed to load roadmap');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (roadmapId) {
       fetchRoadmap();
     }
   }, [roadmapId]);
 
-  const fetchRoadmap = async () => {
-    try {
-      setLoading(true);
-      const data = await getRoadmap(roadmapId);
-      setFormData({
-        mainTopic: data.mainTopic,
-        syllabus: data.syllabus || '',
-        routerLink: data.routerLink || '',
-        intro: data.intro || '',
-      });
-      setCurrentImageUrl(data.imageUrl);
-    } catch (err) {
-      setError('Failed to load roadmap');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -162,9 +164,9 @@ function RoadmapForm({ roadmapId, onBack, onSuccess }) {
             {!imageFile && currentImageUrl && (
               <div className="mt-2">
                 <p className="text-sm text-gray-600 mb-1">Current image:</p>
-                <img 
-                  src={`https://api.asknehru.com${currentImageUrl}`} 
-                  alt="Current" 
+                <img
+                  src={`https://api.asknehru.com${currentImageUrl}`}
+                  alt="Current"
                   className="h-20 w-20 rounded object-cover"
                   onError={(e) => e.target.style.display = 'none'}
                 />
@@ -173,9 +175,9 @@ function RoadmapForm({ roadmapId, onBack, onSuccess }) {
             {imageFile && (
               <div className="mt-2">
                 <p className="text-sm text-gray-600 mb-1">New image preview:</p>
-                <img 
-                  src={URL.createObjectURL(imageFile)} 
-                  alt="Preview" 
+                <img
+                  src={URL.createObjectURL(imageFile)}
+                  alt="Preview"
                   className="h-20 w-20 rounded object-cover"
                 />
               </div>
