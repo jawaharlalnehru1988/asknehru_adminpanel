@@ -3,31 +3,33 @@ import ConversationsList from './ConversationsList';
 import ConversationForm from './ConversationForm';
 import RoadmapsList from './RoadmapsList';
 import RoadmapForm from './RoadmapForm';
+import YogaPosesList from './YogaPosesList';
+import YogaPoseForm from './YogaPoseForm';
 
 function Dashboard({ onLogout }) {
   const [view, setView] = useState('conversations');
   const [subView, setSubView] = useState('list'); // 'list' or 'form'
-  const [editingId, setEditingId] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
 
   const handleAdd = () => {
-    setEditingId(null);
+    setEditingItem(null);
     setSubView('form');
   };
 
-  const handleEdit = (id) => {
-    setEditingId(id);
+  const handleEdit = (item) => {
+    setEditingItem(item);
     setSubView('form');
   };
 
   const handleBack = () => {
-    setEditingId(null);
+    setEditingItem(null);
     setSubView('list');
   };
 
   const switchView = (newView) => {
     setView(newView);
     setSubView('list');
-    setEditingId(null);
+    setEditingItem(null);
   };
 
   return (
@@ -55,6 +57,16 @@ function Dashboard({ onLogout }) {
           >
             Roadmaps
           </a>
+          <a
+            href="#yoga"
+            className={view === 'yoga' ? 'active' : ''}
+            onClick={(e) => {
+              e.preventDefault();
+              switchView('yoga');
+            }}
+          >
+            Yoga Poses
+          </a>
         </nav>
       </div>
       <div className="main-content">
@@ -66,23 +78,45 @@ function Dashboard({ onLogout }) {
         </div>
         
         {view === 'conversations' && subView === 'list' && (
-          <ConversationsList onNew={handleAdd} onEdit={handleEdit} />
+          <ConversationsList onNew={handleAdd} onEdit={(item) => handleEdit(item.id)} />
         )}
         {view === 'conversations' && subView === 'form' && (
           <ConversationForm
-            conversationId={editingId}
+            conversationId={editingItem}
             onBack={handleBack}
             onSuccess={handleBack}
           />
         )}
         
         {view === 'roadmaps' && subView === 'list' && (
-          <RoadmapsList onNew={handleAdd} onEdit={handleEdit} />
+          <RoadmapsList onNew={handleAdd} onEdit={(item) => handleEdit(item.id)} />
         )}
         {view === 'roadmaps' && subView === 'form' && (
           <RoadmapForm
-            roadmapId={editingId}
+            roadmapId={editingItem}
             onBack={handleBack}
+            onSuccess={handleBack}
+          />
+        )}
+        
+        {view === 'yoga' && subView === 'list' && (
+          <>
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-2xl font-bold">Yoga Poses Management</h2>
+              <button
+                onClick={handleAdd}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Add New Pose
+              </button>
+            </div>
+            <YogaPosesList onEdit={handleEdit} />
+          </>
+        )}
+        {view === 'yoga' && subView === 'form' && (
+          <YogaPoseForm
+            pose={editingItem}
+            onClose={handleBack}
             onSuccess={handleBack}
           />
         )}

@@ -139,4 +139,55 @@ export const deleteRoadmap = async (id) => {
   return response.data;
 };
 
+// Yoga Poses APIs
+export const getYogaPoses = async () => {
+  const response = await api.get('/yoga/poses');
+  return response.data;
+};
+
+export const getYogaPose = async (id) => {
+  const response = await api.get(`/yoga/poses/${id}`);
+  return response.data;
+};
+
+export const getYogaPoseByPoseId = async (poseId) => {
+  const response = await api.get(`/yoga/poses/pose-id/${poseId}`);
+  return response.data;
+};
+
+export const getYogaPosesByDifficulty = async (difficulty) => {
+  const response = await api.get(`/yoga/poses/difficulty/${difficulty}`);
+  return response.data;
+};
+
+export const getYogaPosesByCategory = async (category) => {
+  const response = await api.get(`/yoga/poses/category/${category}`);
+  return response.data;
+};
+
+export const searchYogaPoses = async (name) => {
+  const response = await api.get(`/yoga/poses/search?name=${name}`);
+  return response.data;
+};
+
+export const getPopularYogaPoses = async () => {
+  const response = await api.get('/yoga/poses/popular');
+  return response.data;
+};
+
+export const createYogaPose = async (data) => {
+  const response = await api.post('/yoga/poses', data);
+  return response.data;
+};
+
+export const updateYogaPose = async (id, data) => {
+  const response = await api.put(`/yoga/poses/${id}`, data);
+  return response.data;
+};
+
+export const deleteYogaPose = async (id) => {
+  const response = await api.delete(`/yoga/poses/${id}`);
+  return response.data;
+};
+
 export default api;
