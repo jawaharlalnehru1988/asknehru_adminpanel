@@ -27,6 +27,9 @@ const YogaPoseForm = ({ pose, onClose, onSuccess }) => {
   const [mistake, setMistake] = useState('');
   const [tag, setTag] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (pose) {
@@ -39,6 +42,9 @@ const YogaPoseForm = ({ pose, onClose, onSuccess }) => {
         detailedSteps: pose.detailedSteps || [],
         spiritualQuote: pose.spiritualQuote || { text: '', author: '' }
       });
+      if (pose.imageUrl) {
+        setImagePreview(pose.imageUrl);
+      }
     }
   }, [pose]);
 
@@ -53,6 +59,56 @@ const YogaPoseForm = ({ pose, onClose, onSuccess }) => {
       ...prev,
       spiritualQuote: { ...prev.spiritualQuote, [name]: value }
     }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async () => {
+    if (!imageFile) return null;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', imageFile);
+
+    try {
+      const response = await fetch('https://api.asknehru.com/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      throw error;
+    } finally {
+      setUploading(false);
+    }
   };
 
   const addContraindication = () => {
@@ -157,10 +213,18 @@ const YogaPoseForm = ({ pose, onClose, onSuccess }) => {
     setSubmitting(true);
 
     try {
+      // Upload image if a new file is selected
+      let imageUrl = formData.imageUrl;
+      if (imageFile) {
+        imageUrl = await uploadImage();
+      }
+
+      const dataToSubmit = { ...formData, imageUrl };
+
       if (pose) {
-        await updateYogaPose(pose.id, formData);
+        await updateYogaPose(pose.id, dataToSubmit);
       } else {
-        await createYogaPose(formData);
+        await createYogaPose(dataToSubmit);
       }
       onSuccess();
     } catch (error) {
@@ -270,14 +334,23 @@ const YogaPoseForm = ({ pose, onClose, onSuccess }) => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Image URL</label>
+            <label className="block text-sm font-medium mb-1">Pose Image</label>
             <input
-              type="url"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleChange}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {imagePreview && (
+              <div className="mt-2">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="max-w-xs h-40 object-cover rounded border border-gray-300"
+                />
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">Max file size: 5MB. Accepted formats: JPG, PNG, GIF, WebP</p>
           </div>
 
           <div className="mb-4">
@@ -510,10 +583,10 @@ const YogaPoseForm = ({ pose, onClose, onSuccess }) => {
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || uploading}
               className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-300"
             >
-              {submitting ? 'Saving...' : 'Save Pose'}
+              {uploading ? 'Uploading Image...' : submitting ? 'Saving...' : 'Save Pose'}
             </button>
           </div>
         </form>
