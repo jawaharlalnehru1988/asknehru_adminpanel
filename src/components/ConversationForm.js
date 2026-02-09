@@ -3,7 +3,7 @@ import {
   getConversation,
   createConversation,
   updateConversation,
-  getMainTopics,
+  getRoadmaps,
 } from '../services/api';
 
 function ConversationForm({ conversationId, onBack, onSuccess }) {
@@ -26,8 +26,16 @@ function ConversationForm({ conversationId, onBack, onSuccess }) {
   useEffect(() => {
     const fetchMainTopics = async () => {
       try {
-        const topics = await getMainTopics();
-        setMainTopics(topics);
+        const roadmaps = await getRoadmaps();
+        // Extract unique mainTopics from roadmaps
+        const uniqueTopics = [...new Set(roadmaps.map(roadmap => roadmap.mainTopic))]
+          .filter(topic => topic) // Remove any null/undefined
+          .sort()
+          .map(topic => ({
+            value: topic,
+            label: topic
+          }));
+        setMainTopics(uniqueTopics);
       } catch (err) {
         console.error('Failed to load main topics:', err);
       }
