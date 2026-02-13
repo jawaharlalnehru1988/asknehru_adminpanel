@@ -4,37 +4,11 @@ const API_BASE_URL = 'https://api.asknehru.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  withCredentials: true,
 });
 
-// Add token to requests if available
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Handle 401 errors (unauthorized)
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('adminToken');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Auth APIs
-export const login = async (username, password) => {
-  const response = await api.post('/auth/login', { usernameOrEmail: username, password });
-  return response.data;
-};
+// Removed authentication - all endpoints are now public
+// Removed default Content-Type header to allow axios to set it automatically for FormData
 
 // Conversations APIs
 export const getMainTopics = async () => {
@@ -54,7 +28,7 @@ export const getConversation = async (id) => {
 
 export const createConversation = async (data, articleAudioFile, conversationAudioFile) => {
   const formData = new FormData();
-  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
   if (articleAudioFile) {
     formData.append('articleAudio', articleAudioFile);
   }
@@ -62,17 +36,13 @@ export const createConversation = async (data, articleAudioFile, conversationAud
     formData.append('conversationAudio', conversationAudioFile);
   }
   
-  const response = await api.post('/conversations', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await api.post('/conversations', formData);
   return response.data;
 };
 
 export const updateConversation = async (id, data, articleAudioFile, conversationAudioFile) => {
   const formData = new FormData();
-  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
   if (articleAudioFile) {
     formData.append('articleAudio', articleAudioFile);
   }
@@ -80,11 +50,7 @@ export const updateConversation = async (id, data, articleAudioFile, conversatio
     formData.append('conversationAudio', conversationAudioFile);
   }
   
-  const response = await api.put(`/conversations/${id}`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await api.put(`/conversations/${id}`, formData);
   return response.data;
 };
 
@@ -106,31 +72,23 @@ export const getRoadmap = async (id) => {
 
 export const createRoadmap = async (data, imageFile) => {
   const formData = new FormData();
-  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
   if (imageFile) {
     formData.append('image', imageFile);
   }
   
-  const response = await api.post('/roadmaps', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await api.post('/roadmaps', formData);
   return response.data;
 };
 
 export const updateRoadmap = async (id, data, imageFile) => {
   const formData = new FormData();
-  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
   if (imageFile) {
     formData.append('image', imageFile);
   }
   
-  const response = await api.put(`/roadmaps/${id}`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await api.put(`/roadmaps/${id}`, formData);
   return response.data;
 };
 

@@ -6,7 +6,7 @@ import RoadmapForm from './RoadmapForm';
 import YogaPosesList from './YogaPosesList';
 import YogaPoseForm from './YogaPoseForm';
 
-function Dashboard({ onLogout }) {
+function Dashboard() {
   const [view, setView] = useState('conversations');
   const [subView, setSubView] = useState('list'); // 'list' or 'form'
   const [editingItem, setEditingItem] = useState(null);
@@ -72,9 +72,6 @@ function Dashboard({ onLogout }) {
       <div className="main-content">
         <div className="header">
           <h1>AskNehru Content Management</h1>
-          <button className="btn-logout" onClick={onLogout}>
-            Logout
-          </button>
         </div>
         
         {view === 'conversations' && subView === 'list' && (
