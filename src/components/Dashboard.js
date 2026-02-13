@@ -73,9 +73,9 @@ function Dashboard() {
         <div className="header">
           <h1>AskNehru Content Management</h1>
         </div>
-        
+
         {view === 'conversations' && subView === 'list' && (
-          <ConversationsList onNew={handleAdd} onEdit={(item) => handleEdit(item.id)} />
+          <ConversationsList onNew={handleAdd} onEdit={handleEdit} />
         )}
         {view === 'conversations' && subView === 'form' && (
           <ConversationForm
@@ -84,9 +84,9 @@ function Dashboard() {
             onSuccess={handleBack}
           />
         )}
-        
+
         {view === 'roadmaps' && subView === 'list' && (
-          <RoadmapsList onNew={handleAdd} onEdit={(item) => handleEdit(item.id)} />
+          <RoadmapsList onNew={handleAdd} onEdit={handleEdit} />
         )}
         {view === 'roadmaps' && subView === 'form' && (
           <RoadmapForm
@@ -95,7 +95,7 @@ function Dashboard() {
             onSuccess={handleBack}
           />
         )}
-        
+
         {view === 'yoga' && subView === 'list' && (
           <>
             <div className="flex justify-between items-center p-6 border-b">
