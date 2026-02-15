@@ -3,7 +3,7 @@ import {
   getConversation,
   createConversation,
   updateConversation,
-  getMainTopics,
+  getRoadmapMainTopics,
 } from '../services/api';
 
 function ConversationForm({ conversationId, onBack, onSuccess }) {
@@ -26,8 +26,7 @@ function ConversationForm({ conversationId, onBack, onSuccess }) {
   useEffect(() => {
     const fetchMainTopics = async () => {
       try {
-        const topics = await getMainTopics();
-        // API returns [{value: "JAVA", label: "Java"}, ...]
+        const topics = await getRoadmapMainTopics();
         setMainTopics(topics);
       } catch (err) {
         console.error('Failed to load main topics:', err);
@@ -161,8 +160,8 @@ function ConversationForm({ conversationId, onBack, onSuccess }) {
           >
             <option value="">Select a main topic</option>
             {mainTopics.map((topic) => (
-              <option key={topic.value} value={topic.value}>
-                {topic.label}
+              <option key={topic} value={topic}>
+                {topic}
               </option>
             ))}
           </select>

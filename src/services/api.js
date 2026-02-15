@@ -65,6 +65,28 @@ export const getRoadmaps = async () => {
   return response.data;
 };
 
+export const getRoadmapMainTopics = async () => {
+  try {
+    const response = await api.get('/roadmaps/main-topics');
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    const status = error?.response?.status;
+    if (status === 400 || status === 404) {
+      const fallbackResponse = await api.get('/conversations/main-topics');
+      const topics = Array.isArray(fallbackResponse.data) ? fallbackResponse.data : [];
+      return topics
+        .map((topic) => {
+          if (typeof topic === 'string') {
+            return topic;
+          }
+          return topic?.value || topic?.label;
+        })
+        .filter(Boolean);
+    }
+    throw error;
+  }
+};
+
 export const getRoadmap = async (id) => {
   const response = await api.get(`/roadmaps/${id}`);
   return response.data;
