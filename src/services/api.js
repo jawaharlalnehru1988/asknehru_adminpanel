@@ -130,33 +130,29 @@ export const getYogaPose = async (id) => {
   return response.data;
 };
 
-export const getYogaPoseByPoseId = async (poseId) => {
-  const response = await api.get(`/yoga/poses/pose-id/${poseId}`);
-  return response.data;
-};
-
-export const getYogaPosesByDifficulty = async (difficulty) => {
-  const response = await api.get(`/yoga/poses/difficulty/${difficulty}`);
-  return response.data;
-};
-
-export const getYogaPosesByCategory = async (category) => {
-  const response = await api.get(`/yoga/poses/category/${category}`);
-  return response.data;
-};
-
-export const searchYogaPoses = async (name) => {
-  const response = await api.get(`/yoga/poses/search?name=${name}`);
-  return response.data;
-};
-
-export const getPopularYogaPoses = async () => {
-  const response = await api.get('/yoga/poses/popular');
+export const searchYogaPoses = async (yogaName) => {
+  const response = await api.get('/yoga/poses/search', {
+    params: { yogaName },
+  });
   return response.data;
 };
 
 export const createYogaPose = async (data) => {
   const response = await api.post('/yoga/poses', data);
+  return response.data;
+};
+
+export const uploadYogaImage = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/upload/image', formData);
+  return response.data;
+};
+
+export const uploadYogaAudio = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/upload/audio', formData);
   return response.data;
 };
 

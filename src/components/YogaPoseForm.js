@@ -1,340 +1,415 @@
-import React, { useState, useEffect } from 'react';
-import { createYogaPose, updateYogaPose } from '../services/api';
+import React, { useEffect, useState } from 'react';
+import { createYogaPose, updateYogaPose, uploadYogaAudio, uploadYogaImage } from '../services/api';
+
+const YOGA_NAME_GROUPS = [
+  {
+    label: '🧘 Foundational / Relaxation Asanas',
+    options: [
+      { value: 'Shavasana', label: 'Shavasana' },
+      { value: 'Makarasana', label: 'Makarasana' },
+      { value: 'Balasana', label: 'Balasana' },
+      { value: 'Shashankasana', label: 'Shashankasana' },
+      { value: 'Advasana', label: 'Advasana' },
+      { value: 'Jyestikasana', label: 'Jyestikasana' },
+      { value: 'Supta Baddha Konasana', label: 'Supta Baddha Konasana' },
+      { value: 'Sukhasana', label: 'Sukhasana' },
+      { value: 'Padmasana', label: 'Padmasana' },
+      { value: 'Siddhasana', label: 'Siddhasana' },
+      { value: 'Vajrasana', label: 'Vajrasana' },
+      { value: 'Swastikasana', label: 'Swastikasana' },
+    ],
+  },
+  {
+    label: '🧘 Standing Asanas',
+    options: [
+      { value: 'Tadasana', label: 'Tadasana' },
+      { value: 'Vrikshasana', label: 'Vrikshasana' },
+      { value: 'Trikonasana', label: 'Trikonasana' },
+      { value: 'Parsvakonasana', label: 'Parsvakonasana' },
+      { value: 'Utkatasana', label: 'Utkatasana' },
+      { value: 'Padahastasana', label: 'Padahastasana' },
+      { value: 'Ardha Chakrasana', label: 'Ardha Chakrasana' },
+      { value: 'Virabhadrasana I', label: 'Virabhadrasana I' },
+      { value: 'Virabhadrasana II', label: 'Virabhadrasana II' },
+      { value: 'Virabhadrasana III', label: 'Virabhadrasana III' },
+      { value: 'Prasarita Padottanasana', label: 'Prasarita Padottanasana' },
+      { value: 'Garudasana', label: 'Garudasana' },
+      { value: 'Natarajasana', label: 'Natarajasana' },
+    ],
+  },
+  {
+    label: '🧘 Sitting Asanas',
+    options: [
+      { value: 'Paschimottanasana', label: 'Paschimottanasana' },
+      { value: 'Janu Shirshasana', label: 'Janu Shirshasana' },
+      { value: 'Ardha Matsyendrasana', label: 'Ardha Matsyendrasana' },
+      { value: 'Vakrasana', label: 'Vakrasana' },
+      { value: 'Baddha Konasana', label: 'Baddha Konasana' },
+      { value: 'Mandukasana', label: 'Mandukasana' },
+      { value: 'Gomukhasana', label: 'Gomukhasana' },
+      { value: 'Simhasana', label: 'Simhasana' },
+      { value: 'Ustrasana', label: 'Ustrasana' },
+      { value: 'Yoga Mudrasana', label: 'Yoga Mudrasana' },
+    ],
+  },
+  {
+    label: '🧘 Supine Asanas',
+    options: [
+      { value: 'Pavanamuktasana', label: 'Pavanamuktasana' },
+      { value: 'Uttanpadasana', label: 'Uttanpadasana' },
+      { value: 'Setu Bandhasana', label: 'Setu Bandhasana' },
+      { value: 'Supta Padangusthasana', label: 'Supta Padangusthasana' },
+      { value: 'Matsyasana', label: 'Matsyasana' },
+      { value: 'Chakrasana', label: 'Chakrasana' },
+      { value: 'Anantasana', label: 'Anantasana' },
+      { value: 'Supta Vajrasana', label: 'Supta Vajrasana' },
+      { value: 'Naukasana', label: 'Naukasana' },
+    ],
+  },
+  {
+    label: '🧘 Prone Asanas',
+    options: [
+      { value: 'Bhujangasana', label: 'Bhujangasana' },
+      { value: 'Shalabhasana', label: 'Shalabhasana' },
+      { value: 'Dhanurasana', label: 'Dhanurasana' },
+      { value: 'Makarasana (Prone)', label: 'Makarasana' },
+      { value: 'Naukasana (Prone Variation)', label: 'Naukasana (Prone Variation)' },
+      { value: 'Saral Bhujangasana', label: 'Saral Bhujangasana' },
+      { value: 'Ardha Shalabhasana', label: 'Ardha Shalabhasana' },
+    ],
+  },
+  {
+    label: '🧘 Spine Twisting Asanas',
+    options: [
+      { value: 'Ardha Matsyendrasana (Spine Twisting)', label: 'Ardha Matsyendrasana' },
+      { value: 'Vakrasana (Spine Twisting)', label: 'Vakrasana' },
+      { value: 'Supta Matsyendrasana', label: 'Supta Matsyendrasana' },
+      { value: 'Bharadvajasana', label: 'Bharadvajasana' },
+      { value: 'Marichyasana', label: 'Marichyasana' },
+    ],
+  },
+  {
+    label: '🧘 Inverted Asanas',
+    options: [
+      { value: 'Sarvangasana', label: 'Sarvangasana' },
+      { value: 'Halasana', label: 'Halasana' },
+      { value: 'Viparita Karani', label: 'Viparita Karani' },
+      { value: 'Shirshasana', label: 'Shirshasana' },
+      { value: 'Adho Mukha Svanasana', label: 'Adho Mukha Svanasana' },
+      { value: 'Pincha Mayurasana', label: 'Pincha Mayurasana' },
+    ],
+  },
+  {
+    label: '🧘 Core Strengthening Asanas',
+    options: [
+      { value: 'Naukasana (Core Strengthening)', label: 'Naukasana' },
+      { value: 'Kumbhakasana (Plank Pose)', label: 'Kumbhakasana (Plank Pose)' },
+      { value: 'Chaturanga Dandasana', label: 'Chaturanga Dandasana' },
+      { value: 'Vasisthasana', label: 'Vasisthasana' },
+      { value: 'Uttanpadasana (Core Strengthening)', label: 'Uttanpadasana' },
+      { value: 'Phalakasana', label: 'Phalakasana' },
+    ],
+  },
+  {
+    label: '🧘 Hip Opening Asanas',
+    options: [
+      { value: 'Baddha Konasana (Hip Opening)', label: 'Baddha Konasana' },
+      { value: 'Malasana', label: 'Malasana' },
+      { value: 'Gomukhasana (Hip Opening)', label: 'Gomukhasana' },
+      { value: 'Anjaneyasana', label: 'Anjaneyasana' },
+      { value: 'Eka Pada Rajakapotasana', label: 'Eka Pada Rajakapotasana' },
+    ],
+  },
+  {
+    label: '🧘 Backward Bending Asanas',
+    options: [
+      { value: 'Bhujangasana (Backward Bending)', label: 'Bhujangasana' },
+      { value: 'Ustrasana (Backward Bending)', label: 'Ustrasana' },
+      { value: 'Chakrasana (Backward Bending)', label: 'Chakrasana' },
+      { value: 'Setu Bandhasana (Backward Bending)', label: 'Setu Bandhasana' },
+      { value: 'Dhanurasana (Backward Bending)', label: 'Dhanurasana' },
+      { value: 'Matsyasana (Backward Bending)', label: 'Matsyasana' },
+    ],
+  },
+];
+
+const CATEGORY_OPTIONS = [
+  'Neck Relief',
+  'Shoulder Relief',
+  'Upper Back Relief',
+  'Lower Back Relief',
+  'Spine Flexibility',
+  'Hip Joint Relief',
+  'Knee Joint Relief',
+  'Ankle & Foot Relief',
+  'Digestive Improvement',
+  'Respiratory Improvement',
+  'Stress & Anxiety Relief',
+  'Hormonal Balance',
+  'Reproductive Health',
+  'Blood Circulation',
+  'Weight Management',
+  'Full Body Relaxation',
+  'Core Strengthening',
+  'Sciatica Relief',
+  'Arthritis Relief',
+  'Posture Correction',
+];
+
+const YOGA_NAME_VALUES = YOGA_NAME_GROUPS.flatMap((group) =>
+  group.options.map((option) => option.value)
+);
 
 const YogaPoseForm = ({ pose, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    poseId: '',
-    name: '',
-    englishName: '',
-    sanskritName: '',
-    difficulty: 'BEGINNER',
-    imageUrl: '',
-    imageContext: '',
-    description: '',
-    quickBenefit: '',
-    duration: '',
+    yogaName: '',
+    blogContent: '',
+    audioURL: '',
+    videoURL: '',
+    imageURL: '',
     category: '',
-    popularity: 50,
-    contraindications: [],
-    mistakes: [],
-    tags: [],
-    benefits: [],
-    detailedSteps: [],
-    spiritualQuote: { text: '', author: '' }
   });
-
-  const [contraindication, setContraindication] = useState('');
-  const [mistake, setMistake] = useState('');
-  const [tag, setTag] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [audioFile, setAudioFile] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [audioPreview, setAudioPreview] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [isCustomYogaName, setIsCustomYogaName] = useState(false);
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
 
   useEffect(() => {
     if (pose) {
+      const poseYogaName = pose.yogaName || '';
+      const poseCategory = pose.category || '';
+      const customYoga = !!poseYogaName && !YOGA_NAME_VALUES.includes(poseYogaName);
+      const customCategory = !!poseCategory && !CATEGORY_OPTIONS.includes(poseCategory);
+
+      setIsCustomYogaName(customYoga);
+      setIsCustomCategory(customCategory);
+
       setFormData({
-        ...pose,
-        contraindications: pose.contraindications || [],
-        mistakes: pose.mistakes || [],
-        tags: pose.tags || [],
-        benefits: pose.benefits || [],
-        detailedSteps: pose.detailedSteps || [],
-        spiritualQuote: pose.spiritualQuote || { text: '', author: '' }
+        yogaName: poseYogaName,
+        blogContent: pose.blogContent || '',
+        audioURL: pose.audioURL || '',
+        videoURL: pose.videoURL || '',
+        imageURL: pose.imageURL || '',
+        category: poseCategory,
       });
-      if (pose.imageUrl) {
-        setImagePreview(pose.imageUrl);
-      }
+      setImagePreview(pose.imageURL || '');
+      setAudioPreview(pose.audioURL || '');
     }
   }, [pose]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleQuoteChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      spiritualQuote: { ...prev.spiritualQuote, [name]: value }
-    }));
+  const handleYogaNameSelectChange = (e) => {
+    const { value } = e.target;
+    if (value === '__custom__') {
+      setIsCustomYogaName(true);
+      setFormData((prev) => ({ ...prev, yogaName: '' }));
+      return;
+    }
+
+    setIsCustomYogaName(false);
+    setFormData((prev) => ({ ...prev, yogaName: value }));
+  };
+
+  const handleCategorySelectChange = (e) => {
+    const { value } = e.target;
+    if (value === '__custom__') {
+      setIsCustomCategory(true);
+      setFormData((prev) => ({ ...prev, category: '' }));
+      return;
+    }
+
+    setIsCustomCategory(false);
+    setFormData((prev) => ({ ...prev, category: value }));
+  };
+
+  const handleAudioChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('audio/')) {
+      alert('Please select an audio file');
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      alert('Audio size must be less than 50MB');
+      return;
+    }
+
+    setAudioFile(file);
+    setAudioPreview(URL.createObjectURL(file));
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
-        return;
-      }
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
-        return;
-      }
-      setImageFile(file);
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
     }
-  };
 
-  const uploadImage = async () => {
-    if (!imageFile) return null;
-
-    setUploading(true);
-    const formData = new FormData();
-    formData.append('file', imageFile);
-
-    try {
-      const response = await fetch('https://api.asknehru.com/api/upload/image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const data = await response.json();
-      return data.url;
-    } catch (error) {
-      console.error('Image upload error:', error);
-      throw error;
-    } finally {
-      setUploading(false);
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
     }
-  };
 
-  const addContraindication = () => {
-    if (contraindication.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        contraindications: [...prev.contraindications, contraindication.trim()]
-      }));
-      setContraindication('');
-    }
-  };
-
-  const removeContraindication = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      contraindications: prev.contraindications.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addMistake = () => {
-    if (mistake.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        mistakes: [...prev.mistakes, mistake.trim()]
-      }));
-      setMistake('');
-    }
-  };
-
-  const removeMistake = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      mistakes: prev.mistakes.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addTag = () => {
-    if (tag.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tag.trim()]
-      }));
-      setTag('');
-    }
-  };
-
-  const removeTag = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addBenefit = () => {
-    setFormData(prev => ({
-      ...prev,
-      benefits: [...prev.benefits, { title: '', description: '', icon: '' }]
-    }));
-  };
-
-  const updateBenefit = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      benefits: prev.benefits.map((b, i) => 
-        i === index ? { ...b, [field]: value } : b
-      )
-    }));
-  };
-
-  const removeBenefit = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      benefits: prev.benefits.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addStep = () => {
-    setFormData(prev => ({
-      ...prev,
-      detailedSteps: [...prev.detailedSteps, { title: '', stage: '', description: '', breath: '' }]
-    }));
-  };
-
-  const updateStep = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      detailedSteps: prev.detailedSteps.map((s, i) => 
-        i === index ? { ...s, [field]: value } : s
-      )
-    }));
-  };
-
-  const removeStep = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      detailedSteps: prev.detailedSteps.filter((_, i) => i !== index)
-    }));
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setUploading(true);
 
     try {
-      // Upload image if a new file is selected
-      let imageUrl = formData.imageUrl;
-      if (imageFile) {
-        imageUrl = await uploadImage();
+      let audioURL = formData.audioURL;
+      if (audioFile) {
+        const uploadedAudio = await uploadYogaAudio(audioFile);
+        audioURL = uploadedAudio.url;
       }
 
-      const dataToSubmit = { ...formData, imageUrl };
+      let imageURL = formData.imageURL;
+      if (imageFile) {
+        const uploadedImage = await uploadYogaImage(imageFile);
+        imageURL = uploadedImage.url;
+      }
+
+      const payload = {
+        ...formData,
+        audioURL,
+        imageURL,
+      };
 
       if (pose) {
-        await updateYogaPose(pose.id, dataToSubmit);
+        await updateYogaPose(pose.id, payload);
       } else {
-        await createYogaPose(dataToSubmit);
+        await createYogaPose(payload);
       }
+
       onSuccess();
     } catch (error) {
       alert('Failed to save yoga pose: ' + (error.response?.data?.message || error.message));
     } finally {
+      setUploading(false);
       setSubmitting(false);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">{pose ? 'Edit' : 'Add'} Yoga Pose</h2>
-        
+
         <form onSubmit={handleSubmit}>
-          {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Pose ID *</label>
-              <input
-                type="text"
-                name="poseId"
-                value={formData.poseId}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Name *</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">English Name</label>
-              <input
-                type="text"
-                name="englishName"
-                value={formData.englishName}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Sanskrit Name</label>
-              <input
-                type="text"
-                name="sanskritName"
-                value={formData.sanskritName}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Difficulty *</label>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Yoga Name *</label>
               <select
-                name="difficulty"
-                value={formData.difficulty}
-                onChange={handleChange}
+                name="yogaName"
+                value={isCustomYogaName ? '__custom__' : formData.yogaName}
+                onChange={handleYogaNameSelectChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="BEGINNER">Beginner</option>
-                <option value="INTERMEDIATE">Intermediate</option>
-                <option value="ADVANCED">Advanced</option>
+                <option value="">Select yoga name</option>
+                {YOGA_NAME_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+                <option value="__custom__">Other (type custom)</option>
               </select>
+              {isCustomYogaName && (
+                <input
+                  type="text"
+                  name="yogaName"
+                  value={formData.yogaName}
+                  onChange={handleChange}
+                  placeholder="Type custom yoga name"
+                  required
+                  className="mt-2 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              )}
             </div>
+
             <div>
               <label className="block text-sm font-medium mb-1">Category</label>
-              <input
-                type="text"
+              <select
                 name="category"
-                value={formData.category}
-                onChange={handleChange}
+                value={isCustomCategory ? '__custom__' : formData.category}
+                onChange={handleCategorySelectChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              >
+                <option value="">Select category</option>
+                {CATEGORY_OPTIONS.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+                <option value="__custom__">Other (type custom)</option>
+              </select>
+              {isCustomCategory && (
+                <input
+                  type="text"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  placeholder="Type custom category"
+                  className="mt-2 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              )}
             </div>
+
             <div>
-              <label className="block text-sm font-medium mb-1">Duration</label>
+              <label className="block text-sm font-medium mb-1">Video URL</label>
               <input
-                type="text"
-                name="duration"
-                value={formData.duration}
+                type="url"
+                name="videoURL"
+                value={formData.videoURL}
                 onChange={handleChange}
-                placeholder="e.g., 15-30 seconds"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Popularity (1-100)</label>
-              <input
-                type="number"
-                name="popularity"
-                value={formData.popularity}
-                onChange={handleChange}
-                min="1"
-                max="100"
+                placeholder="https://youtube.com/..."
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Pose Image</label>
+            <label className="block text-sm font-medium mb-1">Upload Audio</label>
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={handleAudioChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {audioPreview && (
+              <div className="mt-2">
+                <audio controls className="w-full">
+                  <source src={audioPreview} />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">Max file size: 50MB. Accepted formats: MP3, WAV, M4A, OGG</p>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Upload Image</label>
             <input
               type="file"
               accept="image/*"
@@ -353,226 +428,17 @@ const YogaPoseForm = ({ pose, onClose, onSuccess }) => {
             <p className="text-xs text-gray-500 mt-1">Max file size: 5MB. Accepted formats: JPG, PNG, GIF, WebP</p>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Image Context</label>
-            <input
-              type="text"
-              name="imageContext"
-              value={formData.imageContext}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Description</label>
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-1">Blog Content</label>
             <textarea
-              name="description"
-              value={formData.description}
+              name="blogContent"
+              value={formData.blogContent}
               onChange={handleChange}
-              rows="3"
+              rows="10"
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Quick Benefit</label>
-            <input
-              type="text"
-              name="quickBenefit"
-              value={formData.quickBenefit}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Tags */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Tags</label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={tag}
-                onChange={(e) => setTag(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                placeholder="Add a tag"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button type="button" onClick={addTag} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Add
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.tags.map((t, index) => (
-                <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded flex items-center gap-2">
-                  {t}
-                  <button type="button" onClick={() => removeTag(index)} className="text-blue-600 hover:text-blue-800">×</button>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Contraindications */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Contraindications</label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={contraindication}
-                onChange={(e) => setContraindication(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addContraindication())}
-                placeholder="Add a contraindication"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button type="button" onClick={addContraindication} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Add
-              </button>
-            </div>
-            <ul className="list-disc list-inside">
-              {formData.contraindications.map((c, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm">
-                  <span className="flex-1">{c}</span>
-                  <button type="button" onClick={() => removeContraindication(index)} className="text-red-600 hover:text-red-800">Remove</button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Common Mistakes */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Common Mistakes</label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={mistake}
-                onChange={(e) => setMistake(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMistake())}
-                placeholder="Add a common mistake"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button type="button" onClick={addMistake} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Add
-              </button>
-            </div>
-            <ul className="list-disc list-inside">
-              {formData.mistakes.map((m, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm">
-                  <span className="flex-1">{m}</span>
-                  <button type="button" onClick={() => removeMistake(index)} className="text-red-600 hover:text-red-800">Remove</button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Benefits */}
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium">Benefits</label>
-              <button type="button" onClick={addBenefit} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
-                Add Benefit
-              </button>
-            </div>
-            {formData.benefits.map((benefit, index) => (
-              <div key={index} className="border border-gray-200 rounded p-4 mb-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={benefit.title}
-                    onChange={(e) => updateBenefit(index, 'title', e.target.value)}
-                    placeholder="Title"
-                    className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="text"
-                    value={benefit.icon}
-                    onChange={(e) => updateBenefit(index, 'icon', e.target.value)}
-                    placeholder="Icon"
-                    className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <textarea
-                  value={benefit.description}
-                  onChange={(e) => updateBenefit(index, 'description', e.target.value)}
-                  placeholder="Description"
-                  rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                />
-                <button type="button" onClick={() => removeBenefit(index)} className="text-red-600 hover:text-red-800 text-sm">
-                  Remove Benefit
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Detailed Steps */}
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium">Detailed Steps</label>
-              <button type="button" onClick={addStep} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
-                Add Step
-              </button>
-            </div>
-            {formData.detailedSteps.map((step, index) => (
-              <div key={index} className="border border-gray-200 rounded p-4 mb-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={step.title}
-                    onChange={(e) => updateStep(index, 'title', e.target.value)}
-                    placeholder="Title"
-                    className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="text"
-                    value={step.stage}
-                    onChange={(e) => updateStep(index, 'stage', e.target.value)}
-                    placeholder="Stage (optional)"
-                    className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <textarea
-                  value={step.description}
-                  onChange={(e) => updateStep(index, 'description', e.target.value)}
-                  placeholder="Description"
-                  rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                />
-                <input
-                  type="text"
-                  value={step.breath}
-                  onChange={(e) => updateStep(index, 'breath', e.target.value)}
-                  placeholder="Breath instruction"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                />
-                <button type="button" onClick={() => removeStep(index)} className="text-red-600 hover:text-red-800 text-sm">
-                  Remove Step
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Spiritual Quote */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Spiritual Quote</label>
-            <textarea
-              name="text"
-              value={formData.spiritualQuote.text}
-              onChange={handleQuoteChange}
-              placeholder="Quote text"
-              rows="2"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-            />
-            <input
-              type="text"
-              name="author"
-              value={formData.spiritualQuote.author}
-              onChange={handleQuoteChange}
-              placeholder="Author"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Buttons */}
           <div className="flex gap-2 justify-end">
             <button
               type="button"
