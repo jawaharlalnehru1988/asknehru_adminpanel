@@ -7,10 +7,22 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Removed authentication - all endpoints are now public
-// Removed default Content-Type header to allow axios to set it automatically for FormData
+// Attach JWT token to every request if present
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('adminToken');
+  // Guard against stale 'undefined' string stored from old broken sessions
+  if (token && token !== 'undefined' && token !== 'null') {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
 
-// Knowledge Base (Conversations) APIs
+// Auth
+export const login = async (email, password) => {
+  const response = await api.post('/auth/login', { email, password });
+  return response.data;
+};
+
 export const getMainTopics = async () => {
   const response = await api.get('/conversations/main-topics');
   return response.data;
@@ -87,29 +99,47 @@ export const getRoadmap = async (id) => {
 };
 
 export const createRoadmap = async (data, imageFile) => {
-  const formData = new FormData();
-  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
   if (imageFile) {
+    // Multipart only when an image is included
+    const formData = new FormData();
+    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
     formData.append('image', imageFile);
+    const response = await api.post('/roadmaps', formData);
+    return response.data;
   }
-  
-  const response = await api.post('/roadmaps', formData);
+  // Plain JSON when no image
+  const response = await api.post('/roadmaps', data, {
+    headers: { 'Content-Type': 'application/json' }
+  });
   return response.data;
 };
 
 export const updateRoadmap = async (id, data, imageFile) => {
-  const formData = new FormData();
-  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
   if (imageFile) {
+    // Multipart only when an image is included
+    const formData = new FormData();
+    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
     formData.append('image', imageFile);
+    const response = await api.put(`/roadmaps/${id}`, formData);
+    return response.data;
   }
-  
-  const response = await api.put(`/roadmaps/${id}`, formData);
+  // Plain JSON when no image
+  const response = await api.put(`/roadmaps/${id}`, data, {
+    headers: { 'Content-Type': 'application/json' }
+  });
   return response.data;
 };
 
+
 export const deleteRoadmap = async (id) => {
   const response = await api.delete(`/roadmaps/${id}`);
+  return response.data;
+};
+
+export const toggleRoadmapUserAssigned = async (id, isAssigned) => {
+  const response = await api.patch(`/roadmaps/${id}/user-assigned`, {
+    userAssignedRoadmap: isAssigned
+  });
   return response.data;
 };
 

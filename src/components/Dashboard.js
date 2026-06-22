@@ -6,8 +6,8 @@ import RoadmapForm from './RoadmapForm';
 import YogaPosesList from './YogaPosesList';
 import YogaPoseForm from './YogaPoseForm';
 
-function Dashboard() {
-  const [view, setView] = useState('knowledgeBases');
+function Dashboard({ onLogout }) {
+  const [view, setView] = useState(() => localStorage.getItem('adminView') || 'roadmaps');
   const [subView, setSubView] = useState('list'); // 'list' or 'form'
   const [editingItem, setEditingItem] = useState(null);
 
@@ -27,26 +27,18 @@ function Dashboard() {
   };
 
   const switchView = (newView) => {
+    localStorage.setItem('adminView', newView);
     setView(newView);
     setSubView('list');
     setEditingItem(null);
   };
+
 
   return (
     <div className="dashboard">
       <div className="sidebar">
         <h2>Admin Panel</h2>
         <nav>
-          <a
-            href="#conversations"
-            className={view === 'knowledgeBases' ? 'active' : ''}
-            onClick={(e) => {
-              e.preventDefault();
-              switchView('knowledgeBases');
-            }}
-          >
-            Knowledge Base
-          </a>
           <a
             href="#roadmaps"
             className={view === 'roadmaps' ? 'active' : ''}
@@ -56,6 +48,16 @@ function Dashboard() {
             }}
           >
             Roadmaps
+          </a>
+          <a
+            href="#conversations"
+            className={view === 'knowledgeBases' ? 'active' : ''}
+            onClick={(e) => {
+              e.preventDefault();
+              switchView('knowledgeBases');
+            }}
+          >
+            Knowledge Base
           </a>
           <a
             href="#yoga"
@@ -72,6 +74,12 @@ function Dashboard() {
       <div className="main-content">
         <div className="header">
           <h1>AskNehru Content Management</h1>
+          <button
+            onClick={onLogout}
+            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 border border-red-300"
+          >
+            Logout
+          </button>
         </div>
 
         {view === 'knowledgeBases' && subView === 'list' && (

@@ -1,19 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getKnowledgeBases, deleteKnowledgeBase } from '../services/api';
+import { getCache, setCache, invalidateCache } from '../services/store';
+
+const CACHE_KEY = 'knowledgeBases';
+const ITEMS_PER_PAGE = 10;
 
 function KnowledgeBasesList({ onEdit, onNew }) {
   const [knowledgeBases, setKnowledgeBases] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState('mainTopic');
+  const [sortDir, setSortDir] = useState('asc');
 
   useEffect(() => {
     fetchKnowledgeBases();
   }, []);
 
-  const fetchKnowledgeBases = async () => {
+  const fetchKnowledgeBases = async (forceRefresh = false) => {
+    if (!forceRefresh) {
+      const cached = getCache(CACHE_KEY);
+      if (cached) {
+        setKnowledgeBases(cached);
+        return;
+      }
+    }
     try {
       setLoading(true);
       const data = await getKnowledgeBases();
+      setCache(CACHE_KEY, data);
       setKnowledgeBases(data);
     } catch (err) {
       setError('Failed to load knowledge bases');
@@ -23,17 +38,43 @@ function KnowledgeBasesList({ onEdit, onNew }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this entry?')) {
-      return;
-    }
-
+    if (!window.confirm('Are you sure you want to delete this entry?')) return;
     try {
       await deleteKnowledgeBase(id);
-      fetchKnowledgeBases();
+      invalidateCache(CACHE_KEY);
+      fetchKnowledgeBases(true);
     } catch (err) {
       alert('Failed to delete entry');
     }
   };
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) return <span className="ml-1 text-gray-300">↕</span>;
+    return <span className="ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+  };
+
+  const sorted = useMemo(() => {
+    return [...knowledgeBases].sort((a, b) => {
+      const aVal = (a[sortField] || '').toLowerCase();
+      const bVal = (b[sortField] || '').toLowerCase();
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [knowledgeBases, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE));
+  const paginated = sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -76,11 +117,17 @@ function KnowledgeBasesList({ onEdit, onNew }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Main Topic
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100"
+                  onClick={() => handleSort('mainTopic')}
+                >
+                  Main Topic <SortIcon field="mainTopic" />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sub Topic
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100"
+                  onClick={() => handleSort('subTopic')}
+                >
+                  Sub Topic <SortIcon field="subTopic" />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Article Audio
@@ -91,7 +138,7 @@ function KnowledgeBasesList({ onEdit, onNew }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {knowledgeBases.map((kb) => (
+              {paginated.map((kb) => (
                 <tr key={kb.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
@@ -130,6 +177,39 @@ function KnowledgeBasesList({ onEdit, onNew }) {
               ))}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <p className="text-sm text-gray-700">
+                Showing{' '}
+                <span className="font-medium">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span>
+                {' '}to{' '}
+                <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, sorted.length)}</span>
+                {' '}of{' '}
+                <span className="font-medium">{sorted.length}</span> results
+              </p>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </nav>
+            </div>
+          )}
         </div>
       )}
     </div>

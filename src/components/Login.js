@@ -14,7 +14,9 @@ function Login({ onLogin }) {
 
     try {
       const response = await login(username, password);
-      localStorage.setItem('adminToken', response.token);
+      const token = response.data?.accessToken;
+      if (!token) throw new Error('No access token in response');
+      localStorage.setItem('adminToken', token);
       onLogin();
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');

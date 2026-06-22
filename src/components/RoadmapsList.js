@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getRoadmaps, deleteRoadmap, getImportableSyllabuses, importSyllabus } from '../services/api';
+import { getRoadmaps, deleteRoadmap, getImportableSyllabuses, importSyllabus, toggleRoadmapUserAssigned } from '../services/api';
+import { getCache, setCache, invalidateCache } from '../services/store';
+
+const CACHE_KEY = 'roadmaps';
 
 function RoadmapsList({ onNew, onEdit }) {
   const [roadmaps, setRoadmaps] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [error, setError] = useState('');
@@ -40,7 +43,8 @@ function RoadmapsList({ onNew, onEdit }) {
       setImporting(true);
       await importSyllabus(selectedSyllabusId);
       setShowImportModal(false);
-      fetchRoadmaps();
+      invalidateCache(CACHE_KEY);
+      fetchRoadmaps(true);
     } catch (err) {
       alert('Failed to import syllabus: ' + (err.response?.data?.detail || err.message));
     } finally {
@@ -48,10 +52,18 @@ function RoadmapsList({ onNew, onEdit }) {
     }
   };
 
-  const fetchRoadmaps = async () => {
+  const fetchRoadmaps = async (forceRefresh = false) => {
+    if (!forceRefresh) {
+      const cached = getCache(CACHE_KEY);
+      if (cached) {
+        setRoadmaps(cached);
+        return;
+      }
+    }
     try {
       setLoading(true);
       const data = await getRoadmaps();
+      setCache(CACHE_KEY, data);
       setRoadmaps(data);
     } catch (err) {
       setError('Failed to load roadmaps');
@@ -60,6 +72,7 @@ function RoadmapsList({ onNew, onEdit }) {
     }
   };
 
+
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this roadmap?')) {
       return;
@@ -67,9 +80,21 @@ function RoadmapsList({ onNew, onEdit }) {
 
     try {
       await deleteRoadmap(id);
-      fetchRoadmaps();
+      invalidateCache(CACHE_KEY);
+      fetchRoadmaps(true);
     } catch (err) {
       alert('Failed to delete roadmap');
+    }
+  };
+
+  const handleToggleAssigned = async (id, currentValue) => {
+    try {
+      await toggleRoadmapUserAssigned(id, !currentValue);
+      setRoadmaps(roadmaps.map(r => 
+        r.id === id ? { ...r, userAssignedRoadmap: !currentValue } : r
+      ));
+    } catch (err) {
+      alert('Failed to update roadmap assignment status');
     }
   };
 
@@ -128,6 +153,9 @@ function RoadmapsList({ onNew, onEdit }) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Main Topic
                 </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  UserAssignedRoadmap
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -145,6 +173,14 @@ function RoadmapsList({ onNew, onEdit }) {
                       <span className="text-sm font-medium text-gray-900">
                         {roadmap.mainTopic}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <input
+                        type="checkbox"
+                        checked={roadmap.userAssignedRoadmap || false}
+                        onChange={() => handleToggleAssigned(roadmap.id, roadmap.userAssignedRoadmap)}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
