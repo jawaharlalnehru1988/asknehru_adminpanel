@@ -7,12 +7,12 @@
 ## Architecture
 - **Frontend**: React 18 static site
 - **Backend API**: https://api.asknehru.com/api
-- **Build Location**: /var/www/asknehru-admin/build/
+- **Build Location**: /var/www/asknehru-platform/admin/build/
 - **Nginx Config**: /etc/nginx/sites-available/admin.asknehru
 
 ## Rebuild & Deploy
 ```bash
-cd /var/www/asknehru-admin
+cd /var/www/asknehru-platform/admin
 npm run build
 sudo systemctl reload nginx
 ```

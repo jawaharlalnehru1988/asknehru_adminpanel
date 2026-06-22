@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import ConversationsList from './ConversationsList';
-import ConversationForm from './ConversationForm';
+import KnowledgeBasesList from './KnowledgeBasesList';
+import KnowledgeBaseForm from './KnowledgeBaseForm';
 import RoadmapsList from './RoadmapsList';
 import RoadmapForm from './RoadmapForm';
 import YogaPosesList from './YogaPosesList';
 import YogaPoseForm from './YogaPoseForm';
 
 function Dashboard() {
-  const [view, setView] = useState('conversations');
+  const [view, setView] = useState('knowledgeBases');
   const [subView, setSubView] = useState('list'); // 'list' or 'form'
   const [editingItem, setEditingItem] = useState(null);
 
@@ -39,10 +39,10 @@ function Dashboard() {
         <nav>
           <a
             href="#conversations"
-            className={view === 'conversations' ? 'active' : ''}
+            className={view === 'knowledgeBases' ? 'active' : ''}
             onClick={(e) => {
               e.preventDefault();
-              switchView('conversations');
+              switchView('knowledgeBases');
             }}
           >
             Knowledge Base
@@ -74,11 +74,11 @@ function Dashboard() {
           <h1>AskNehru Content Management</h1>
         </div>
 
-        {view === 'conversations' && subView === 'list' && (
-          <ConversationsList onNew={handleAdd} onEdit={handleEdit} />
+        {view === 'knowledgeBases' && subView === 'list' && (
+          <KnowledgeBasesList onNew={handleAdd} onEdit={handleEdit} />
         )}
-        {view === 'conversations' && subView === 'form' && (
-          <ConversationForm
+        {view === 'knowledgeBases' && subView === 'form' && (
+          <KnowledgeBaseForm
             conversationId={editingItem}
             onBack={handleBack}
             onSuccess={handleBack}

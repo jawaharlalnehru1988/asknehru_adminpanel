@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getRoadmaps, deleteRoadmap } from '../services/api';
+import { getRoadmaps, deleteRoadmap, getImportableSyllabuses, importSyllabus } from '../services/api';
 
 function RoadmapsList({ onNew, onEdit }) {
   const [roadmaps, setRoadmaps] = useState([]);
@@ -7,10 +7,46 @@ function RoadmapsList({ onNew, onEdit }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [error, setError] = useState('');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [syllabuses, setSyllabuses] = useState([]);
+  const [selectedSyllabusId, setSelectedSyllabusId] = useState('');
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     fetchRoadmaps();
   }, []);
+
+  useEffect(() => {
+    if (showImportModal) {
+      fetchSyllabuses();
+    }
+  }, [showImportModal]);
+
+  const fetchSyllabuses = async () => {
+    try {
+      const data = await getImportableSyllabuses();
+      setSyllabuses(data);
+      if (data.length > 0) {
+        setSelectedSyllabusId(data[0].id);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!selectedSyllabusId) return;
+    try {
+      setImporting(true);
+      await importSyllabus(selectedSyllabusId);
+      setShowImportModal(false);
+      fetchRoadmaps();
+    } catch (err) {
+      alert('Failed to import syllabus: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const fetchRoadmaps = async () => {
     try {
@@ -49,12 +85,20 @@ function RoadmapsList({ onNew, onEdit }) {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Roadmaps</h2>
-        <button
-          onClick={onNew}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-        >
-          + New Roadmap
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+          >
+            Import Syllabus
+          </button>
+          <button
+            onClick={onNew}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          >
+            + New Roadmap
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -82,16 +126,7 @@ function RoadmapsList({ onNew, onEdit }) {
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avatar
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Main Topic
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Router Link
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Intro
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -107,24 +142,9 @@ function RoadmapsList({ onNew, onEdit }) {
                       {roadmap.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {roadmap.imageUrl && (
-                        <img
-                          src={`https://api.asknehru.com${roadmap.imageUrl}`}
-                          alt={roadmap.mainTopic}
-                          className="h-10 w-10 rounded object-cover"
-                        />
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-gray-900">
                         {roadmap.mainTopic}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-600">{roadmap.routerLink}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600 line-clamp-2">{roadmap.intro}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
@@ -199,6 +219,52 @@ function RoadmapsList({ onNew, onEdit }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {showImportModal && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Import Syllabus from Interview Trainer</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Syllabus</label>
+              {syllabuses.length === 0 ? (
+                <p className="text-sm text-gray-500">No syllabuses found or failed to load.</p>
+              ) : (
+                <select
+                  value={selectedSyllabusId}
+                  onChange={(e) => setSelectedSyllabusId(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                >
+                  {syllabuses.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.topic} (ID: {s.id})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setShowImportModal(false)}
+                disabled={importing}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleImport}
+                disabled={importing || !selectedSyllabusId}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 flex items-center"
+              >
+                {importing ? 'Importing...' : 'Import'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

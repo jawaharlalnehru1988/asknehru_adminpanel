@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { getConversations, deleteConversation } from '../services/api';
+import { getKnowledgeBases, deleteKnowledgeBase } from '../services/api';
 
-function ConversationsList({ onEdit, onNew }) {
-  const [conversations, setConversations] = useState([]);
+function KnowledgeBasesList({ onEdit, onNew }) {
+  const [knowledgeBases, setKnowledgeBases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchConversations();
+    fetchKnowledgeBases();
   }, []);
 
-  const fetchConversations = async () => {
+  const fetchKnowledgeBases = async () => {
     try {
       setLoading(true);
-      const data = await getConversations();
-      setConversations(data);
+      const data = await getKnowledgeBases();
+      setKnowledgeBases(data);
     } catch (err) {
-      setError('Failed to load conversations');
+      setError('Failed to load knowledge bases');
     } finally {
       setLoading(false);
     }
@@ -28,8 +28,8 @@ function ConversationsList({ onEdit, onNew }) {
     }
 
     try {
-      await deleteConversation(id);
-      fetchConversations();
+      await deleteKnowledgeBase(id);
+      fetchKnowledgeBases();
     } catch (err) {
       alert('Failed to delete entry');
     }
@@ -61,7 +61,7 @@ function ConversationsList({ onEdit, onNew }) {
         </div>
       )}
 
-      {conversations.length === 0 ? (
+      {knowledgeBases.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <p className="text-gray-600 mb-4">No entries yet</p>
           <button
@@ -85,40 +85,28 @@ function ConversationsList({ onEdit, onNew }) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Article Audio
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Conversation Audio
-                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {conversations.map((conv) => (
-                <tr key={conv.id} className="hover:bg-gray-50">
+              {knowledgeBases.map((kb) => (
+                <tr key={kb.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                      {conv.mainTopic}
+                      {kb.mainTopic || '-'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">
-                      {conv.subTopic}
+                      {kb.subTopic || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {conv.articleAudio ? (
+                    {kb.articleAudio ? (
                       <audio controls className="w-48">
-                        <source src={`https://api.asknehru.com${conv.articleAudio}`} />
-                      </audio>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {conv.conversationAudio ? (
-                      <audio controls className="w-48">
-                        <source src={`https://api.asknehru.com${conv.conversationAudio}`} />
+                        <source src={`https://api.asknehru.com${kb.articleAudio}`} />
                       </audio>
                     ) : (
                       <span className="text-gray-400">-</span>
@@ -126,13 +114,13 @@ function ConversationsList({ onEdit, onNew }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
-                      onClick={() => onEdit(conv.id)}
+                      onClick={() => onEdit(kb.id)}
                       className="text-indigo-600 hover:text-indigo-900 mr-4"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(conv.id)}
+                      onClick={() => handleDelete(kb.id)}
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete
@@ -148,4 +136,4 @@ function ConversationsList({ onEdit, onNew }) {
   );
 }
 
-export default ConversationsList;
+export default KnowledgeBasesList;

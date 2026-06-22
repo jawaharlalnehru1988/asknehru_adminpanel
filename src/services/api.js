@@ -10,51 +10,45 @@ const api = axios.create({
 // Removed authentication - all endpoints are now public
 // Removed default Content-Type header to allow axios to set it automatically for FormData
 
-// Conversations APIs
+// Knowledge Base (Conversations) APIs
 export const getMainTopics = async () => {
   const response = await api.get('/conversations/main-topics');
   return response.data;
 };
 
-export const getConversations = async () => {
+export const getKnowledgeBases = async () => {
   const response = await api.get('/conversations');
   return response.data;
 };
 
-export const getConversation = async (id) => {
+export const getKnowledgeBase = async (id) => {
   const response = await api.get(`/conversations/${id}`);
   return response.data;
 };
 
-export const createConversation = async (data, articleAudioFile, conversationAudioFile) => {
+export const createKnowledgeBase = async (data, articleAudioFile) => {
   const formData = new FormData();
   formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
   if (articleAudioFile) {
     formData.append('articleAudio', articleAudioFile);
-  }
-  if (conversationAudioFile) {
-    formData.append('conversationAudio', conversationAudioFile);
   }
   
   const response = await api.post('/conversations', formData);
   return response.data;
 };
 
-export const updateConversation = async (id, data, articleAudioFile, conversationAudioFile) => {
+export const updateKnowledgeBase = async (id, data, articleAudioFile) => {
   const formData = new FormData();
   formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }), 'data.json');
   if (articleAudioFile) {
     formData.append('articleAudio', articleAudioFile);
-  }
-  if (conversationAudioFile) {
-    formData.append('conversationAudio', conversationAudioFile);
   }
   
   const response = await api.put(`/conversations/${id}`, formData);
   return response.data;
 };
 
-export const deleteConversation = async (id) => {
+export const deleteKnowledgeBase = async (id) => {
   const response = await api.delete(`/conversations/${id}`);
   return response.data;
 };
@@ -116,6 +110,16 @@ export const updateRoadmap = async (id, data, imageFile) => {
 
 export const deleteRoadmap = async (id) => {
   const response = await api.delete(`/roadmaps/${id}`);
+  return response.data;
+};
+
+export const getImportableSyllabuses = async () => {
+  const response = await api.get('/roadmaps/import-syllabus/list');
+  return response.data;
+};
+
+export const importSyllabus = async (id) => {
+  const response = await api.post(`/roadmaps/import-syllabus/${id}`);
   return response.data;
 };
 
